@@ -8,10 +8,10 @@ require 'net/https'
 require 'base64'
 module UmengVerify
   class Client
-    attr_accessor :app_key, :ali_app_key, :host, :http
-    def initialize(app_key, ali_app_key)
+    attr_accessor :app_secret, :app_key, :host, :http
+    def initialize(app_key, app_secret)
+      @app_secret = app_secret
       @app_key = app_key
-      @ali_app_key = ali_app_key
       @host = "verify5.market.alicloudapi.com"
       @http = Net::HTTP.new(@host, 443)
       @http.use_ssl = true
@@ -32,7 +32,7 @@ module UmengVerify
       headers["Date"] = Time.now.gmtime.strftime("%a, %d %b %Y %H:%M:%S GMT")
       headers["X-Ca-Version"] = "1"
       headers["X-Ca-Stage"] = "RELEASE"
-      headers["X-Ca-Key"] = ali_app_key
+      headers["X-Ca-Key"] = app_key
       headers["X-Ca-Timestamp"] = (Time.now.to_f * 1000).to_i.to_s
       headers["X-Ca-Nonce"] = SecureRandom.hex
 
@@ -51,7 +51,7 @@ module UmengVerify
         form.empty? ? path : "#{path}?#{form.sort.map { |k, v| "#{k}=#{v}" }.join('&')}",
       ].join("\n")
 
-      headers["X-Ca-Signature"] = Base64.strict_encode64(OpenSSL::HMAC.digest("SHA256", app_key, string_to_sign))
+      headers["X-Ca-Signature"] = Base64.strict_encode64(OpenSSL::HMAC.digest("SHA256", app_secret, string_to_sign))
       headers["X-Ca-Signature-Headers"] = signature_headers.join(",")
 
       if method == Net::HTTP::Get::METHOD
